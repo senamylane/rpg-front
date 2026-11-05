@@ -1,37 +1,48 @@
+// src/components/CreateCharacterScreen.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { createCharacter } from '../api/characterApi';
+import type { HeroClass } from '../api/characterApi';
+
+const HERO_CLASSES: { value: HeroClass; label: string }[] = [
+  { value: 'Warrior', label: 'Warrior (Guerreiro)' },
+  { value: 'Mage', label: 'Mage (Mago)' },
+  { value: 'Priest', label: 'Priest (Clérigo)' },
+  { value: 'Archer', label: 'Archer (Arqueiro)' },
+];
 
 export const CreateCharacterScreen: React.FC = () => {
   const navigate = useNavigate();
   const [name, setName] = useState<string>('');
+  const [classType, setClassType] = useState<HeroClass>('Warrior');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const trimmedName = name.trim();
+    e.preventDefault();
+    const trimmedName = name.trim();
 
-  if (!trimmedName) {
-    setError('Please enter a character name.');
-    return;
-  }
+    if (!trimmedName) {
+      setError('Please enter a character name.');
+      return;
+    }
 
-  try {
-    setIsSubmitting(true);
-    setError(null);
-    
-    // Save the created character from the backend response
-    const newCharacter = await createCharacter(trimmedName);
-    
-    // Navigate straight into the game using the character's ID
-    navigate(`/game/${newCharacter.id}`);
-  } catch (err) {
-    setError(err instanceof Error ? err.message : 'Failed to create character');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      
+      const newCharacter = await createCharacter({
+        name: trimmedName,
+        classType,
+      });
+
+      navigate(`/game/${newCharacter.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create character');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div style={styles.container}>
@@ -55,6 +66,25 @@ export const CreateCharacterScreen: React.FC = () => {
             style={styles.input}
             autoFocus
           />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label} htmlFor="heroClass">
+            Class
+          </label>
+          <select
+            id="heroClass"
+            value={classType}
+            onChange={(e) => setClassType(e.target.value as HeroClass)}
+            disabled={isSubmitting}
+            style={styles.select}
+          >
+            {HERO_CLASSES.map((cls) => (
+              <option key={cls.value} value={cls.value}>
+                {cls.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div style={styles.buttonGroup}>
@@ -121,6 +151,16 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#1f2937',
     color: '#ffffff',
     outline: 'none',
+  },
+  select: {
+    padding: '0.75rem',
+    fontSize: '1rem',
+    borderRadius: '6px',
+    border: '1px solid #4b5563',
+    backgroundColor: '#1f2937',
+    color: '#ffffff',
+    outline: 'none',
+    cursor: 'pointer',
   },
   buttonGroup: {
     display: 'flex',

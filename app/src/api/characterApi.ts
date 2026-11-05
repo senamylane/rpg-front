@@ -1,8 +1,13 @@
-
-const API_BASE_URL = 'http://localhost:8080'; 
 import type {GameCharacter} from "../types/character"
 import type {Battle} from "../types/battle"
 import type {ZoneType} from "../types/zone"
+
+const API_BASE_URL = 'http://localhost:8080'; 
+export type HeroClass = 'Warrior' | 'Mage' | 'Priest' | 'Archer';
+export interface CreateCharacterPayload {
+  name: string;
+  classType: HeroClass;
+}
 
 export const fetchAllCharacters = async (): Promise<GameCharacter[]> => {
   const response = await fetch(`${API_BASE_URL}/character/all`);
@@ -12,13 +17,13 @@ export const fetchAllCharacters = async (): Promise<GameCharacter[]> => {
   return response.json();
 };
 
-export const createCharacter = async (name: string): Promise<GameCharacter> => {
+export const createCharacter = async (payload: CreateCharacterPayload): Promise<GameCharacter> => {
   const response = await fetch(`${API_BASE_URL}/character/create`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -41,11 +46,19 @@ export const fetchActiveBattle = async (characterId: number): Promise<Battle | n
   return response.json();
 };
 
-export const changeCharacterZone = async (characterId: number, zone: ZoneType): Promise<GameCharacter> => {
-  const response = await fetch(`${API_BASE_URL}/character/change-zone/${zone}?characterId=${characterId}`, {
+export const changeCharacterZone = async (characterId: number, zone: ZoneType): Promise<boolean> => {
+  const response = await fetch(`${API_BASE_URL}/character/${characterId}/change-zone/${zone}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+    },
   });
-  if (!response.ok) throw new Error('Failed to change zone');
+
+  if (!response.ok) {
+    throw new Error(`Falha ao alterar região: ${response.statusText}`);
+  }
+
+  // Como o backend retorna boolean (true/false)
   return response.json();
 };
+

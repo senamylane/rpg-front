@@ -75,12 +75,20 @@ export const InGameScreen: React.FC = () => {
 
   const handleZoneSelect = async (zone: ZoneType) => {
     if (!idNum) return;
+
     try {
-      const updatedChar = await changeCharacterZone(idNum, zone);
-      setCharacter(updatedChar);
-      setMenuMode("MAIN");
+      setError(null);
+      const success = await changeCharacterZone(idNum, zone);
+
+      if (success) {
+        // 1. Atualiza a zona no estado local do personagem
+        setCharacter((prev) => (prev ? { ...prev, currentZone: zone } : null));
+
+        // 2. Retorna para o menu principal de ações
+        setMenuMode("MAIN");
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to change region");
+      setError(err instanceof Error ? err.message : "Erro ao alterar região");
     }
   };
 

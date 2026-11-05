@@ -1,0 +1,49 @@
+/* src/components/BattleScreen.css */
+
+.battle-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Altura exata da janela */
+  width: 100vw;
+  box-sizing: border-box; /* Garante que o padding não gere scroll */
+  overflow: hidden; /* Remove as barras de rolagem */
+  background-color: #ffffff;
+  color: #000000;
+  font-family: sans-serif;
+  padding: 1rem 2rem; /* Margens ligeiramente reduzidas */
+}
+
+.targetable-enemy {
+  transition: border 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+/* Efeito ao passar o rato sobre os inimigos quando for a vez do jogador atacar */
+.targetable-enemy:hover {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 10px #3b82f6;
+  transform: scale(1.02);
+  cursor: crosshair;
+}
+
+.hp-bar-inner {
+  height: 100%;
+  background-color: #10b981;
+  transition: width 0.4s ease-in-out;
+}
+
+.mana-bar-inner {
+  height: 100%;
+  background-color: #0284c7;
+  transition: width 0.4s ease-in-out;
+}
+
+/* Animação de dano (piscar a vermelho) */
+@keyframes damageFlash {
+  0% { background-color: #450a0a; transform: translateX(5px); }
+  50% { transform: translateX(-5px); }
+  100% { background-color: #0a0a0a; transform: translateX(0); }
+}
+
+.card-damaged {
+  animation: damageFlash 0.3s ease-in-out;
+}

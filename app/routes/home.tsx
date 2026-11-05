@@ -1,13 +1,13 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { MainScreen } from "../src/components/MainScreen"; // Adjust relative path if needed
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "RPG Game - Main Menu" },
+    { name: "description", content: "Welcome to the RPG Game!" },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return <MainScreen />;
 }

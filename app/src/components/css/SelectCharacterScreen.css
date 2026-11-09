@@ -1,0 +1,27 @@
+/* src/components/SelectCharacterScreen.css */
+
+.hero-row {
+  border: 4px solid transparent;
+  padding: 0.5rem;
+  transition: border-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.hero-row:hover {
+  border-radius: 16px;
+  border-color: #ffffff; /* White border on hover */
+  transform: scale(1.02); /* Slight zoom effect */
+}
+
+.retro-scroll::-webkit-scrollbar {
+  width: 16px;
+}
+
+.retro-scroll::-webkit-scrollbar-track {
+  background: #888888;
+  border-left: 6px solid #000000; /* Matches the outer border */
+}
+
+.retro-scroll::-webkit-scrollbar-thumb {
+  background: #000000;
+  border: 2px solid #888888; /* Adds a bit of contrast inside the track */
+}

@@ -11,6 +11,7 @@ export interface BattlePlayer {
   mana: number;
   maxMana: number;
   defense: number;
+  classType: string;
 }
 
 export interface BattleEnemy {
@@ -34,6 +35,20 @@ export interface BattleData {
   finished: boolean;
   status: string;
   turnCount: number;
+}
+
+export interface UseSpellPayload {
+  battle_id: string;
+  character_id: number;
+  targets: string[]; // <-- Array de IDs
+  spell: string;
+}
+
+export interface SpellConfig {
+  id: string;
+  name: string;
+  manaCost: number;
+  numTargets: number;
 }
 
 export const initBattle = async (characterId: number): Promise<BattleData> => {
@@ -79,3 +94,25 @@ export const reviveCharacter = async (characterId: number): Promise<void> => {
   });
   if (!response.ok) throw new Error('Falha ao reviver personagem');
 };
+
+export const useSpell = async (payload: UseSpellPayload): Promise<BattleEnemy[]> => {
+  const response = await fetch(`${API_BASE_URL}/battle/player/use-spell`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  
+  if (!response.ok) throw new Error('Falha ao usar magia');
+  return response.json();
+};
+
+export const getSpellsByClass = async (classType: string): Promise<SpellConfig[]> => {
+  const response = await fetch(`${API_BASE_URL}/battle/${classType}/spells`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  
+  if (!response.ok) throw new Error('Falha ao buscar magias');
+  return response.json();
+};
+

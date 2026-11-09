@@ -6,4 +6,7 @@ export interface GameCharacter {
   mana: number;
   maxMana: number;
   currentZone: string;
+  level: number;
+  experience: number;
+  nextLevelExperience: number;
 }

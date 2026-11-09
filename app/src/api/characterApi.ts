@@ -1,6 +1,7 @@
 import type {GameCharacter} from "../types/character"
 import type {Battle} from "../types/battle"
 import type {ZoneType} from "../types/zone"
+import type {BattlePlayer} from './battleApi'
 
 const API_BASE_URL = 'http://localhost:8080'; 
 export type HeroClass = 'Warrior' | 'Mage' | 'Priest' | 'Archer';
@@ -62,3 +63,14 @@ export const changeCharacterZone = async (characterId: number, zone: ZoneType): 
   return response.json();
 };
 
+export const takeBreath = async (characterId: number): Promise<BattlePlayer | null> => {
+  const response = await fetch(`${API_BASE_URL}/character/${characterId}/take-breath`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error('Could not take breath');
+  return response.json();
+};

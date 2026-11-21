@@ -16,6 +16,7 @@ import {
 } from "../api/battleApi";
 import { takeBreath } from "../api/characterApi";
 import "./css/BattleScreen.css";
+import { EnemyCard } from "./battle-screen/enemyCard";
 
 export const BattleScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -407,59 +408,16 @@ export const BattleScreen: React.FC = () => {
             const isSelectedForSpell = selectedTargets.includes(enemy.enemy_id); // Verifica se está selecionado
 
             return (
-              <div key={enemy.enemy_id} style={styles.enemyWrapper}>
-                <div style={styles.characterName}>
-                  {enemy.name}
-                  {isThisEnemyActive && enemy.hp > 0 && (
-                    <span className="attacking-icon">⚔️</span>
-                  )}
-                </div>
-                <div
-                  onClick={() => handleEnemySelect(enemy)}
-                  className={`
-                    card-animated
-                    ${(isSelectingTarget || selectedSpell) && enemy.hp > 0 ? "targetable-enemy" : ""} 
-                    ${damagedEntity === enemy.enemy_id ? "card-damaged" : ""}
-                    ${isThisEnemyActive && enemy.hp > 0 ? "card-active-enemy" : ""}
-                    ${isSomeoneElseAttacking ? "card-dimmed" : ""}
-                    ${isSelectedForSpell ? "card-targeted" : ""} <!-- AQUI APLICA O VISUAL ROXO/ZOOM -->
-                  `}
-                  style={{
-                    ...styles.card,
-                    opacity: enemy.hp <= 0 ? 0.3 : 1,
-                    cursor:
-                      (isSelectingTarget || selectedSpell) && enemy.hp > 0
-                        ? "crosshair"
-                        : "default",
-                  }}
-                >
-                  <div style={styles.avatarPlaceholder} />
-                  <div style={styles.barsContainer}>
-                    <div style={styles.barOuter}>
-                      <div
-                        className="hp-bar-inner"
-                        style={{
-                          width: `${Math.max(0, (enemy.hp / enemy.maxHp) * 100)}%`,
-                        }}
-                      />
-                      <span style={styles.barText}>
-                        {Math.max(0, enemy.hp)}/{enemy.maxHp}
-                      </span>
-                    </div>
-                    <div style={styles.barOuter}>
-                      <div
-                        className="mana-bar-inner"
-                        style={{
-                          width: `${(enemy.mana / enemy.maxMana) * 100}%`,
-                        }}
-                      />
-                      <span style={styles.barText}>
-                        {enemy.mana}/{enemy.maxMana}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <EnemyCard 
+                enemy={enemy}
+                isThisEnemyActive={isThisEnemyActive}
+                onClick={handleEnemySelect}
+                damagedEntity={damagedEntity}
+                isSelectedForSpell={isSelectedForSpell}
+                isSelectingTarget={isSelectingTarget}
+                isSomeoneElseAttacking={isSomeoneElseAttacking}
+                selectedSpell={selectedSpell}
+               />
             );
           })}
         </div>
@@ -748,12 +706,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardActive: {
     borderColor: "#3b82f6",
-  },
-  avatarPlaceholder: {
-    width: "60px",
-    height: "60px",
-    backgroundColor: "#3f3f46",
-    border: "1px solid #71717a",
   },
   barsContainer: {
     display: "flex",

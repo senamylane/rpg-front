@@ -28,6 +28,7 @@ export const InGameScreen: React.FC = () => {
   const [menuMode, setMenuMode] = useState<MenuMode>("MAIN");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isStartingBattle, setIsStartingBattle] = useState<boolean>(false);
 
   useEffect(() => {
     if (!idNum) return;
@@ -61,6 +62,11 @@ export const InGameScreen: React.FC = () => {
   const handleBattleClick = async () => {
     if (isNewBattleDisabled) return;
     if (!idNum) return;
+
+    // 1. Ativa o loading
+    setIsStartingBattle(true);
+    setError(null); // Limpa erros anteriores, se houver
+
     try {
       if (activeBattle) {
         navigate(`/battle/${activeBattle.id}`);
@@ -70,6 +76,8 @@ export const InGameScreen: React.FC = () => {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start battle");
+      // 2. Em caso de erro, desativa o loading para o player tentar de novo
+      setIsStartingBattle(false);
     }
   };
 
@@ -110,6 +118,15 @@ export const InGameScreen: React.FC = () => {
   const manaPercent = character
     ? Math.max(0, Math.min(100, (character.mana / character.maxMana) * 100))
     : 100;
+  const expPercent = character
+    ? Math.max(
+        0,
+        Math.min(
+          100,
+          (character.experience / character.nextLevelExperience) * 100,
+        ),
+      )
+    : 100;
   const isCampSite = character?.currentZone === "CAMP_SITE";
   const isNewBattleDisabled = !activeBattle && isCampSite;
   return (
@@ -137,9 +154,11 @@ export const InGameScreen: React.FC = () => {
                     backgroundColor: "#10b981",
                   }}
                 />
-                <span style={styles.barText}>
-                  {character?.hp ?? 100}/{character?.maxHp ?? 100}
-                </span>
+                <div style={styles.barTextContainer}>
+                  <span style={styles.barText}>
+                    {character?.hp ?? 100}/{character?.maxHp ?? 100}
+                  </span>
+                </div>
               </div>
               {/* Mana Bar */}
               <div style={styles.barOuter}>
@@ -150,9 +169,27 @@ export const InGameScreen: React.FC = () => {
                     backgroundColor: "#0284c7",
                   }}
                 />
-                <span style={styles.barText}>
-                  {character?.mana ?? 50}/{character?.maxMana ?? 50}
-                </span>
+                <div style={styles.barTextContainer}>
+                  <span style={styles.barText}>
+                    {character?.mana ?? 50}/{character?.maxMana ?? 50}
+                  </span>
+                </div>
+              </div>
+              {/* Exp Bar */}
+              <div style={styles.barOuter}>
+                <div
+                  style={{
+                    ...styles.xpBarInner,
+                    width: `${expPercent}%`,
+                    backgroundColor: "#d6b80c",
+                  }}
+                />
+                <div style={styles.barTextContainer}>
+                  <span style={styles.barText}>
+                    Lvl. {character?.level} | {character?.experience}/
+                    {character?.nextLevelExperience}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -172,18 +209,15 @@ export const InGameScreen: React.FC = () => {
             <div style={styles.buttonStack}>
               <button
                 style={{
-                  ...styles.menuButton,
-                  ...(isNewBattleDisabled ? styles.disabledButton : {}),
+                  ...styles.menuButton, // ou styles.actionButton dependendo de como está nomeado aí
+                  ...(isNewBattleDisabled || isStartingBattle
+                    ? styles.disabledButton
+                    : {}),
                 }}
-                disabled={isNewBattleDisabled}
                 onClick={handleBattleClick}
-                title={
-                  isNewBattleDisabled
-                    ? "Cannot search for monsters in Camp Site"
-                    : undefined
-                }
+                disabled={isNewBattleDisabled || isStartingBattle}
               >
-                {activeBattle ? "Resume battle" : "New Battle"}
+                {isStartingBattle ? "Loading..." : "New Battle"}
               </button>
 
               <button
@@ -289,11 +323,11 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: "0.4rem",
-    width: "160px",
+    width: "180px",
   },
   barOuter: {
     position: "relative",
-    height: "18px",
+    height: "20px",
     backgroundColor: "#1e293b",
     border: "1px solid #475569",
     overflow: "hidden",
@@ -304,13 +338,18 @@ const styles: Record<string, React.CSSProperties> = {
   },
   barText: {
     position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
+    top: "0%",
+    left: "auto",
+    // transform: "translate(-50%, -50%)",
     fontSize: "0.75rem",
     fontWeight: "bold",
     color: "#ffffff",
     textShadow: "1px 1px 2px #000",
+  },
+  barTextContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
   },
   regionLabel: {
     fontSize: "1.1rem",
@@ -383,5 +422,10 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "not-allowed",
     borderColor: "#4b5563",
     pointerEvents: "none", // Block all click/mouse events in CSS
+  },
+  xpBarInner: {
+    height: '100%',
+    backgroundColor: '#eab308', // Amarelo/Dourado
+    transition: 'width 0.4s ease-in-out',
   },
 };

@@ -1,27 +1,84 @@
 /* src/components/BattleScreen.css */
 
 .battle-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  /* Gradiente escuro semi-transparente por cima da imagem para dar contraste */
+  background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.9)), 
+                    url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Altura exata da janela */
-  width: 100vw;
-  box-sizing: border-box; /* Garante que o padding não gere scroll */
-  overflow: hidden; /* Remove as barras de rolagem */
-  background-color: #ffffff;
-  color: #000000;
-  font-family: sans-serif;
-  padding: 1rem 2rem; /* Margens ligeiramente reduzidas */
+  box-sizing: border-box;
+  overflow: hidden;
+  justify-content: space-around;
+}
+
+.action-button {
+  background: linear-gradient(to bottom, #2d3748, #1a202c);
+  color: #f8fafc;
+  border: 2px solid #64748b;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease-in-out;
+}
+
+.action-button:hover:not(:disabled) {
+  background: linear-gradient(to bottom, #334155, #1e293b);
+  border-color: #f59e0b; /* Borda dourada */
+  color: #f59e0b;        /* Texto dourado */
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6), 0 0 12px rgba(245, 158, 11, 0.5); /* Glow effect */
+}
+
+/* Efeito ao clicar (Active) */
+.action-button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Estado Desativado (Disabled) */
+.action-button:disabled, .disabledButton {
+  background: #0f172a !important;
+  color: #475569 !important;
+  border-color: #1e293b !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.card-targeted {
+  border: 3px solid #a855f7 !important;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.7);
+  transform: scale(1.04);
+  transition: all 0.2s ease-in-out;
 }
 
 .targetable-enemy {
   transition: border 0.2s, transform 0.1s, box-shadow 0.2s;
 }
 
-/* Efeito ao passar o rato sobre os inimigos quando for a vez do jogador atacar */
-.targetable-enemy:hover {
+/* .targetable-enemy:hover {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 10px #3b82f6;
   transform: scale(1.02);
+  cursor: crosshair;
+} */
+
+.targetable-enemy:hover {
+  border-color: #ef4444;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
   cursor: crosshair;
 }
 
@@ -46,4 +103,43 @@
 
 .card-damaged {
   animation: damageFlash 0.3s ease-in-out;
+}
+
+/* Removemos a transição travada do inline style e colocamos uma suave aqui */
+.card-animated {
+  transition: all 0.3s ease-in-out !important; 
+}
+
+/* O Inimigo avança para a esquerda e brilha em vermelho */
+.card-active-enemy {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+  transform: translateX(-30px) scale(1.05) !important;
+  z-index: 10;
+}
+
+/* O Player avança para a direita e brilha em azul */
+.card-active-player {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  transform: translateX(30px) scale(1.05) !important;
+  z-index: 10;
+}
+
+/* Escurece quem não está agindo no momento */
+.card-dimmed {
+  opacity: 0.4 !important;
+  filter: grayscale(50%);
+}
+
+/* Animação do ícone de espada pulsando */
+@keyframes pulseSword {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.attacking-icon {
+  display: inline-block;
+  margin-left: 0.5rem;
+  animation: pulseSword 1s infinite;
 }

@@ -34,13 +34,34 @@ export const BattleScreen: React.FC = () => {
     const [showDeathModal, setShowDeathModal] = useState<boolean>(false);
     const [showFleeModal, setShowFleeModal] = useState<boolean>(false);
     const [showVictoryModal, setShowVictoryModal] = useState<boolean>(false);
-
+    const [breathingEntity, setBreathingEntity] = useState<string | null>(null);
     const [showSpellsMenu, setShowSpellsMenu] = useState<boolean>(false);
     const [selectedSpell, setSelectedSpell] = useState<SpellConfig | null>(
         null,
     );
     const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
     const [availableSpells, setAvailableSpells] = useState<SpellConfig[]>([]);
+    const [popups, setPopups] = useState<FloatingPopup[]>([]);
+    const [lungingEntity, setLungingEntity] = useState<string | null>(null);
+
+    const spawnPopup = (
+        targetKey: string,
+        text: string,
+        variant: FloatingPopup["variant"] = "damage",
+    ) => {
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        setPopups((prev) => [...prev, { id, targetKey, text, variant }]);
+        setTimeout(() => {
+            setPopups((prev) => prev.filter((item) => item.id !== id));
+        }, 950);
+    };
+
+    const triggerLunge = (entityKey: string) => {
+        setLungingEntity(entityKey);
+        setTimeout(() => {
+            setLungingEntity((prev) => (prev === entityKey ? null : prev));
+        }, 350);
+    };
 
     const activeHero = players[activeHeroIndex] ?? players[0] ?? null;
     const isPlayerTurn =
@@ -149,6 +170,10 @@ export const BattleScreen: React.FC = () => {
         if (!battleId) return;
         let currentPartyState = currentPlayers.map((p) => ({ ...p }));
 
+        setIsSelectingTarget(false);
+        setSelectedSpell(null);
+        setSelectedTargets([]);
+
         for (const enemy of currentEnemies) {
             if (enemy.hp <= 0) continue;
 
@@ -161,26 +186,40 @@ export const BattleScreen: React.FC = () => {
             setActiveTurnName(enemy.name);
             setActiveEntityId(enemy.enemy_id);
 
-            await new Promise((res) => setTimeout(res, 1000));
+            await new Promise((res) => setTimeout(res, 750));
+            triggerLunge(enemy.enemy_id);
 
             try {
+                const prevHp =
+                    currentPartyState.find((p) => p.id === targetHero.id)?.hp ??
+                    targetHero.hp;
+
                 const updatedHero = await enemyAttack(
                     battleId,
                     enemy.enemy_id,
                     targetHero.id,
                 );
+                const dealt = Math.max(0, prevHp - updatedHero.hp);
+
                 currentPartyState = currentPartyState.map((p) =>
                     p.id === updatedHero.id ? updatedHero : p,
                 );
 
                 setPlayers(currentPartyState);
-                setDamagedEntity(`PLAYER_${updatedHero.id}`);
-                setTimeout(() => setDamagedEntity(null), 300);
+
+                const heroKey = `PLAYER_${updatedHero.id}`;
+                setDamagedEntity(heroKey);
+                spawnPopup(heroKey, dealt > 0 ? `-${dealt}` : "MISS", "damage");
+                setTimeout(() => {
+                    setDamagedEntity((prev) =>
+                        prev === heroKey ? null : prev,
+                    );
+                }, 320);
             } catch (err) {
                 console.error("Erro ao processar turno do inimigo", err);
             }
 
-            await new Promise((res) => setTimeout(res, 500));
+            await new Promise((res) => setTimeout(res, 650));
         }
 
         const firstAliveAfterEnemies = currentPartyState.findIndex(
@@ -199,16 +238,44 @@ export const BattleScreen: React.FC = () => {
 
     const handleTakeBreath = async () => {
         if (!isPlayerTurn || !activeHero) return;
-        const updatedHero = await takeBreath(activeHero.id);
-        const updatedParty = players.map((p) =>
-            p.id === updatedHero?.id ? updatedHero : p,
-        );
-        setPlayers(updatedParty);
-        await advanceHeroTurnOrEnemyTurn(
-            updatedParty,
-            enemies,
-            activeHeroIndex,
-        );
+
+        const heroKey = `PLAYER_${activeHero.id}`;
+        const prevHp = activeHero.hp;
+        const prevMana = activeHero.mana;
+
+        setBreathingEntity(heroKey);
+
+        try {
+            const updatedHero = await takeBreath(activeHero.id);
+            const updatedParty = players.map((p) =>
+                p.id === updatedHero?.id ? updatedHero : p,
+            );
+            setPlayers(updatedParty);
+            if (!updatedHero) return;
+            const hpDiff = updatedHero.hp - prevHp;
+            const manaDiff = updatedHero.mana - prevMana;
+
+            spawnPopup(
+                heroKey,
+                hpDiff > 0 ? `+${hpDiff} HP` : "BREATH",
+                hpDiff > 0 ? "heal" : "mana",
+            );
+            if (manaDiff > 0) {
+                spawnPopup(heroKey, `+${manaDiff} MP`, "mana");
+            }
+
+            setTimeout(() => {
+                setBreathingEntity((prev) => (prev === heroKey ? null : prev));
+            }, 1200);
+            await new Promise((res) => setTimeout(res, 1200));
+            await advanceHeroTurnOrEnemyTurn(
+                updatedParty,
+                enemies,
+                activeHeroIndex,
+            );
+        } catch (error) {
+            console.error("Erro ao recuperar fôlego:", error);
+        }
     };
 
     const handleVictoryContinue = async () => {
@@ -233,17 +300,24 @@ export const BattleScreen: React.FC = () => {
             return;
 
         if (selectedSpell) {
-            if (
-                selectedTargets.length < selectedSpell.numTargets &&
-                !selectedTargets.includes(targetEnemy.enemy_id)
-            ) {
-                setSelectedTargets((prev) => [...prev, targetEnemy.enemy_id]);
-            }
+            setSelectedTargets((prev) => {
+                if (prev.includes(targetEnemy.enemy_id)) {
+                    return prev.filter((id) => id !== targetEnemy.enemy_id);
+                }
+                if (prev.length >= selectedSpell.numTargets) {
+                    return prev;
+                }
+                return [...prev, targetEnemy.enemy_id];
+            });
             return;
         }
 
         if (!isSelectingTarget) return;
         setIsSelectingTarget(false);
+
+        const heroKey = `PLAYER_${activeHero.id}`;
+        const prevEnemyHp = targetEnemy.hp;
+        triggerLunge(heroKey);
 
         try {
             const updatedEnemy = await playerAttack(
@@ -251,6 +325,7 @@ export const BattleScreen: React.FC = () => {
                 activeHero.id,
                 targetEnemy.enemy_id,
             );
+            const dealt = Math.max(0, prevEnemyHp - updatedEnemy.hp);
 
             const updatedEnemies = enemies.map((e) =>
                 e.enemy_id === targetEnemy.enemy_id ? updatedEnemy : e,
@@ -258,7 +333,16 @@ export const BattleScreen: React.FC = () => {
             setEnemies(updatedEnemies);
 
             setDamagedEntity(targetEnemy.enemy_id);
-            setTimeout(() => setDamagedEntity(null), 300);
+            spawnPopup(
+                targetEnemy.enemy_id,
+                dealt > 0 ? `-${dealt}` : "MISS",
+                "damage",
+            );
+            setTimeout(() => {
+                setDamagedEntity((prev) =>
+                    prev === targetEnemy.enemy_id ? null : prev,
+                );
+            }, 320);
 
             await new Promise((res) => setTimeout(res, 1000));
             await advanceHeroTurnOrEnemyTurn(
@@ -299,8 +383,13 @@ export const BattleScreen: React.FC = () => {
 
         const spellBeingCast = selectedSpell;
         const casterId = activeHero.id;
+        const heroKey = `PLAYER_${casterId}`;
+        const prevHpById = new Map(enemies.map((e) => [e.enemy_id, e.hp]));
+
         setSelectedSpell(null);
         setShowSpellsMenu(false);
+        setIsSelectingTarget(false);
+        triggerLunge(heroKey);
 
         try {
             const updatedAffectedEnemies = await useSpell({
@@ -320,14 +409,30 @@ export const BattleScreen: React.FC = () => {
             );
             setPlayers(updatedParty);
 
+            const affectedIds = new Set(
+                updatedAffectedEnemies.map((a) => a.enemy_id),
+            );
             let newEnemiesState = [...enemies];
             updatedAffectedEnemies.forEach((affected) => {
                 newEnemiesState = newEnemiesState.map((e) =>
                     e.enemy_id === affected.enemy_id ? affected : e,
                 );
+                const prevHp = prevHpById.get(affected.enemy_id) ?? affected.hp;
+                const dealt = Math.max(0, prevHp - affected.hp);
+                spawnPopup(
+                    affected.enemy_id,
+                    dealt > 0 ? `-${dealt}` : "0",
+                    "damage",
+                );
             });
+
             setEnemies(newEnemiesState);
             setSelectedTargets([]);
+
+            if (affectedIds.size > 0) {
+                setDamagedEntity(Array.from(affectedIds)[0]);
+                setTimeout(() => setDamagedEntity(null), 320);
+            }
 
             await new Promise((res) => setTimeout(res, 1000));
             await advanceHeroTurnOrEnemyTurn(
@@ -445,12 +550,17 @@ export const BattleScreen: React.FC = () => {
             <div style={styles.battleArena}>
                 <div style={styles.playerSide}>
                     {players.map((hero, idx) => {
+                        const heroKey = `PLAYER_${hero.id}`;
+                        const heroPopups = popups.filter(
+                            (p) => p.targetKey === heroKey,
+                        );
                         const isCurrentHero =
                             activeEntityId === "PLAYER" &&
                             idx === activeHeroIndex &&
                             hero.hp > 0;
-                        const isHeroDamaged =
-                            damagedEntity === `PLAYER_${hero.id}`;
+                        const isHeroDamaged = damagedEntity === heroKey;
+                        const isLunging = lungingEntity === heroKey;
+                        const isBreathing = breathingEntity === heroKey;
 
                         return (
                             <div key={hero.id} style={styles.enemyWrapper}>
@@ -463,18 +573,44 @@ export const BattleScreen: React.FC = () => {
                                     )}
                                 </div>
                                 <div
+                                    onAnimationEnd={() => {
+                                        if (isBreathing) {
+                                            setBreathingEntity(null);
+                                        }
+                                    }}
                                     className={`
-                    card-animated
-                    ${isHeroDamaged ? "card-damaged" : ""}
-                    ${isCurrentHero ? "card-active-player" : ""}
-                    ${!isCurrentHero ? "card-dimmed" : ""}
-                  `}
+        card-animated
+        ${isHeroDamaged ? "card-damaged hit-shake" : ""}
+        ${isLunging ? "lunge-right" : ""}
+        ${isBreathing ? "card-breath" : ""}
+        ${isCurrentHero ? "card-active-player" : ""}
+        ${!isCurrentHero && !isBreathing ? "card-dimmed" : ""}
+        ${hero.hp <= 0 ? "card-ko" : ""}
+      `}
                                     style={{
                                         ...styles.card,
+                                        position: "relative",
+                                        overflow: "visible",
                                         opacity: hero.hp <= 0 ? 0.45 : 1,
                                     }}
                                 >
-                                    <div style={styles.avatarPlaceholder} />
+                                    {heroPopups.map((popup) => (
+                                        <span
+                                            key={popup.id}
+                                            className={`floating-text floating-${popup.variant}`}
+                                        >
+                                            {popup.text}
+                                        </span>
+                                    ))}
+
+                                    <img
+                                        src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(
+                                            hero.classType || hero.name,
+                                        )}`}
+                                        alt={hero.name}
+                                        style={styles.characterImage}
+                                    />
+
                                     <div style={styles.barsContainer}>
                                         <div style={styles.barOuter}>
                                             <div
@@ -537,7 +673,11 @@ export const BattleScreen: React.FC = () => {
                                 isSelectedForSpell={isSelectedForSpell}
                                 isSelectingTarget={isSelectingTarget}
                                 isSomeoneElseAttacking={isSomeoneElseAttacking}
+                                isLunging={lungingEntity === enemy.enemy_id}
                                 selectedSpell={selectedSpell}
+                                popups={popups.filter(
+                                    (p) => p.targetKey === enemy.enemy_id,
+                                )}
                             />
                         );
                     })}
@@ -785,6 +925,9 @@ const styles: Record<string, React.CSSProperties> = {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+    },
+    characterImage: {
+        maxHeight: "55px",
     },
     characterName: {
         fontSize: "1.2rem",

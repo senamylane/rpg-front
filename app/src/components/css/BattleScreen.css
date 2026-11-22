@@ -80,17 +80,11 @@
         box-shadow 0.2s;
 }
 
-/* .targetable-enemy:hover {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 10px #3b82f6;
-  transform: scale(1.02);
-  cursor: crosshair;
-} */
-
 .targetable-enemy:hover {
     border-color: #ef4444;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+    box-shadow: 0 0 24px rgba(230, 6, 6, 0.6);
     cursor: crosshair;
+    transform: scale(1.05);
 }
 
 .hp-bar-inner {
@@ -167,4 +161,124 @@
     display: inline-block;
     margin-left: 0.5rem;
     animation: pulseSword 1s infinite;
+}
+
+@keyframes lungeRight {
+    0% {
+        transform: translateX(0);
+    }
+    45% {
+        transform: translateX(22px);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+@keyframes lungeLeft {
+    0% {
+        transform: translateX(0);
+    }
+    45% {
+        transform: translateX(-22px);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+@keyframes hitShake {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    20% {
+        transform: translateX(-8px);
+    }
+    40% {
+        transform: translateX(8px);
+    }
+    60% {
+        transform: translateX(-6px);
+    }
+    80% {
+        transform: translateX(6px);
+    }
+}
+
+@keyframes floatUpFade {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(0.9);
+    }
+    25% {
+        opacity: 1;
+        transform: translate(-50%, -14px) scale(1.08);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -38px) scale(1);
+    }
+}
+
+.lunge-right {
+    animation: lungeRight 0.35s ease-out;
+}
+
+.lunge-left {
+    animation: lungeLeft 0.35s ease-out;
+}
+
+.hit-shake {
+    animation: hitShake 0.32s ease-in-out;
+}
+
+.floating-text {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    font-weight: 800;
+    font-size: 1.05rem;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 30;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.95);
+    animation: floatUpFade 1.95s ease-out forwards;
+}
+
+.floating-damage {
+    color: #f87171;
+}
+
+.floating-heal {
+    color: #34d399;
+}
+
+.floating-mana {
+    color: #38bdf8;
+}
+
+.card-ko {
+    filter: grayscale(100%);
+    opacity: 0.45;
+}
+@keyframes breathPulse {
+    0% {
+        box-shadow: 0 0 0 rgba(52, 211, 153, 0);
+        transform: translateX(30px) scale(1);
+    }
+    50% {
+        box-shadow:
+            0 0 18px rgba(52, 211, 153, 0.85),
+            0 0 26px rgba(56, 189, 248, 0.55);
+        transform: translateX(30px) scale(1.1);
+    }
+    100% {
+        box-shadow: 0 0 0 rgba(52, 211, 153, 0);
+        transform: translateX(30px) scale(1);
+    }
+}
+
+.card-breath {
+    animation: breathPulse 1.2s ease-out;
 }
